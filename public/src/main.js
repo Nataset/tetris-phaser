@@ -1,9 +1,15 @@
 import Phaser from './lib/phaser.js';
 
-const game = new Phaser.Game({
+const BLOCK_HEIGHT = 25;
+const BLOCK_WIDTH = 25;
+const SCENE_HEIGHT = 500;
+const SCENE_WIDTH = 300;
+
+const game1 = new Phaser.Game({
     type: Phaser.AUTO,
-    width: 600,
-    height: 1000,
+    parent: 'tetris-player1',
+    width: SCENE_WIDTH,
+    height: SCENE_HEIGHT,
     physics: {
         default: 'arcade',
         arcade: {
@@ -18,13 +24,10 @@ const game = new Phaser.Game({
     },
 });
 
-const BLOCK_HEIGHT = 50;
-const BLOCK_WIDTH = 50;
-const SCENE_HEIGHT = 1000;
-const SCENE_WIDTH = 600;
-
 function init() {
     this.dcount = 0;
+
+    this.cursors = this.input.keyboard.createCursorKeys();
 
     this.pieceType = [
         [0, 0, 0],
@@ -33,7 +36,7 @@ function init() {
     ];
 
     this.player = {
-        pos: { x: 5, y: 15 },
+        pos: { x: 5, y: 0 },
         pieceType: this.pieceType,
     };
 
@@ -89,10 +92,11 @@ function init() {
         let checkFlag = false;
         piece.forEach((row, y) => {
             piece.forEach((col, x) => {
-                if (!field[y + pos.y]) {
-                    checkFlag = true;
-                }
-                else if (piece[y][x] !== 0 && field[y + pos.y][x + pos.x] !== 0) {
+                console.log(y, x)
+                // if (!field[y + pos.y]) {
+                //     checkFlag = true;
+                // } 
+                if (piece[y][x] !== 0 && (field[y + pos.y] && field[y + pos.y][x + pos.x]) !== 0) {
                     checkFlag = true;
                 }
             });
@@ -103,13 +107,12 @@ function init() {
     this.join = (player, field) => {
         player.pieceType.forEach((row, y) => {
             row.forEach((value, x) => {
-                if(value !== 0){
-                    field[y - 1 + player.pos.y][x - 1 + player.pos.x] = value;
-                    console.table(field)
+                if (value !== 0) {
+                    field[y + player.pos.y - 1][x + player.pos.x - 1] = value;
                 }
-            })
-        })
-    }
+            });
+        });
+    };
 }
 
 function preload() {}
@@ -120,17 +123,38 @@ function create() {
 }
 
 function update(time, deltaTime) {
-    if (this.dcount > 1000) {
+    if (this.dcount > 500) {
         if (!this.collision(this.player, this.field)) {
             this.player.pos.y++;
             this.activePiece.forEach(block => {
-                block.y += 50;
+                block.y += BLOCK_HEIGHT;
             });
         } else {
             this.join(this.player, this.field);
             this.player.pos.y = 0;
             this.activePiece = this.drawPiece(this.player.pieceType, this.player.pos);
         }
+
+        if (this.dcount > 10) {
+            if (this.cursors.left.isDown) {
+                if (!this.collision(this.player, this.field)) {
+                    console.log(this.player.pos.x);
+                    this.player.pos.x--;
+                    this.activePiece.forEach(block => {
+                        block.x -= BLOCK_WIDTH;
+                    });
+                }
+            } else if (this.cursors.right.isDown) {
+                if (!this.collision(this.player, this.field)) {
+                    console.log(this.player.pos.x);
+                    this.player.pos.x++;
+                    this.activePiece.forEach(block => {
+                        block.x += BLOCK_WIDTH;
+                    });
+                }
+            }
+        }
+
         this.dcount = 0;
     }
     this.dcount += deltaTime;
