@@ -1,9 +1,9 @@
 import Phaser from './lib/phaser.js';
 
-const BLOCK_HEIGHT = 25;
-const BLOCK_WIDTH = 25;
-const SCENE_HEIGHT = 500;
-const SCENE_WIDTH = 300;
+const BLOCK_HEIGHT = 30;
+const BLOCK_WIDTH = 30;
+const SCENE_HEIGHT = 600;
+const SCENE_WIDTH = 360;
 
 const game = new Phaser.Game({
     type: Phaser.AUTO,
@@ -22,19 +22,19 @@ function init() {
     this.dcount = 0;
 
     this.pieceType = [
+        [0, 1, 0],
+        [1, 1, 1],
         [0, 0, 0],
-        [0, 1, 1],
-        [1, 1, 0],
     ];
 
     this.player = {
-        pos: { x: 0, y:0 },
+        pos: { x: 5, y: -1 },
         piece: this.pieceType,
     };
 
     this.field = (() => {
-        let w = 12;
-        let h = 20;
+        let w = parseInt(SCENE_WIDTH / BLOCK_WIDTH);
+        let h = parseInt(SCENE_HEIGHT / BLOCK_HEIGHT);
         const matrix = [];
         while (h--) {
             matrix.push(new Array(w).fill(0));
@@ -46,7 +46,6 @@ function init() {
         const activePiece = [];
         piece.forEach((row, y) => {
             row.forEach((col, x) => {
-                console.log(col)
                 if (col !== 0) {
                     activePiece.push(
                         this.add.rectangle(
@@ -110,7 +109,7 @@ function init() {
     };
 
     this.collisionBottomHandle = (player, field) => {
-        player.pos.y--
+        player.pos.y--;
         this.join(player, field);
         player.pos.y = -1;
         return this.drawPiece(player.piece, player.pos);
@@ -128,12 +127,17 @@ function init() {
         }
     };
 
-    this.rotate = (player, activePiece) => {
+    this.rotateCollision = (player, field) => {};
+
+    this.rotate = (player, field, activePiece) => {
         this.rotateMatrix(player.piece.length, player.piece);
+        if (this.collision(player, field)) {
+            player.pos.x < 3 ? this.player.pos.x++ : this.player.pos.x--;
+        }
         activePiece.forEach(block => {
             block.destroy();
         });
-        return activePiece = this.drawPiece(player.piece, player.pos);
+        return (activePiece = this.drawPiece(player.piece, player.pos));
     };
 
     this.initInput = () => {
@@ -159,7 +163,7 @@ function init() {
         });
 
         this.input.keyboard.on('keydown-UP', event => {
-            this.activePiece = this.rotate(this.player, this.activePiece);
+            this.activePiece = this.rotate(this.player, this.field, this.activePiece);
         });
     };
 }
@@ -173,13 +177,13 @@ function create() {
 }
 
 function update(time, deltaTime) {
-    if (this.dcount > 500) {
-        window.FIELD = this.field;
-        this.player.pos.y++;
-        this.collision(this.player, this.field)
-            ? (this.activePiece = this.collisionBottomHandle(this.player, this.field))
-            : this.move(this.activePiece, { x: 0, y: 1 });
-        this.dcount = 0;
-    }
-    this.dcount += deltaTime;
+    // if (this.dcount > 500) {
+    //     window.FIELD = this.field;
+    //     this.player.pos.y++;
+    //     this.collision(this.player, this.field)
+    //         ? (this.activePiece = this.collisionBottomHandle(this.player, this.field))
+    //         : this.move(this.activePiece, { x: 0, y: 1 });
+    //     this.dcount = 0;
+    // }
+    // this.dcount += deltaTime;
 }
