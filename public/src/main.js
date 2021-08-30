@@ -21,55 +21,79 @@ const game = new Phaser.Game({
 function init() {
     this.dcount = 0;
 
-    // this.pieceType = [
-    //     [0, 0, 0],
-    //     [0, 1, 1],
-    //     [1, 1, 0],
-    // ];
+    this.allPiece = [
+        {
+            type: 'S',
+            color: 0xFF0000,
+            shaped: [
+                [0, 0, 0],
+                [0, 1, 1],
+                [1, 1, 0],
+            ],
+        },
+        {
+            type: 'Z',
+            color: 0xFFFF00,
+            shaped: [
+                [0, 0, 0],
+                [2, 2, 0],
+                [0, 2, 2],
+            ],
+        },
+        {
+            type: 'L',
+            color: 0xFF00FF,
 
-    this.pieceType = {
-        s_shaped: [
-            [0, 0, 0],
-            [0, 1, 1],
-            [1, 1, 0],
-        ],
-        z_shaped: [
-            [0, 0, 0],
-            [2, 2, 0],
-            [0, 2, 2],
-        ],
-        l_shaped: [
-            [0, 3, 0],
-            [0, 3, 0],
-            [0, 3, 3],
-        ],
-        j_shaped: [
-            [0, 4, 0],
-            [0, 4, 0],
-            [4, 4, 0],
-        ],
-        t_shaped: [
-            [0, 0, 0],
-            [0, 5, 0],
-            [5, 5, 5],
-        ], 
-        o_shaped: [
-            [6, 6],
-            [6, 6],
-        ],
-        i_shaped: [
-            [0, 0, 7, 0],
-            [0, 0, 7, 0],
-            [0, 0, 7, 0],
-            [0, 0, 7, 0],
-        ],
-    };
+
+            shaped: [
+                [0, 3, 0],
+                [0, 3, 0],
+                [0, 3, 3],
+            ],
+        },
+        {
+            type: 'J',
+            color: 0x00FF00,
+            shaped: [
+                [0, 4, 0],
+                [0, 4, 0],
+                [4, 4, 0],
+            ],
+        },
+        {
+            type: 'T',
+            color: 0x0000FF,
+            shaped: [
+                [0, 0, 0],
+                [0, 5, 0],
+                [5, 5, 5],
+            ],
+        },
+        {
+            type: 'O',
+            color: 0x00FFFF,
+            shaped: [
+                [6, 6],
+                [6, 6],
+            ],
+        },
+        {
+            type: 'I',
+            color: 0xFFFFFF,
+            shaped: [
+                [0, 0, 7, 0],
+                [0, 0, 7, 0],
+                [0, 0, 7, 0],
+                [0, 0, 7, 0],
+            ],
+        },
+    ];
 
     this.player = {
         pos: { x: 5, y: -1 },
-        // piece: this.pieceType,
-        // piece: this.pieceType.i_shaped,
-        piece: this.pieceType.i_shaped,
+        piece: this.allPiece[6].shaped,
+        pieceType: this.allPiece[6].type,
+        color: this.allPiece[6].color
     };
 
     this.field = (() => {
@@ -82,18 +106,18 @@ function init() {
         return matrix;
     })();
 
-    this.drawPiece = (piece, offset) => {
+    this.drawPiece = (player) => {
         const activePiece = [];
-        piece.forEach((row, y) => {
+        player.piece.forEach((row, y) => {
             row.forEach((col, x) => {
                 if (col !== 0) {
                     activePiece.push(
                         this.add.rectangle(
-                            (x + offset.x) * BLOCK_WIDTH + BLOCK_WIDTH / 2,
-                            (y + offset.y) * BLOCK_HEIGHT + BLOCK_HEIGHT / 2,
+                            (x + player.pos.x) * BLOCK_WIDTH + BLOCK_WIDTH / 2,
+                            (y + player.pos.y) * BLOCK_HEIGHT + BLOCK_HEIGHT / 2,
                             BLOCK_WIDTH,
                             BLOCK_HEIGHT,
-                            0xffffff,
+                            player.color,
                         ),
                     );
                 }
@@ -101,6 +125,15 @@ function init() {
         });
         return activePiece;
     };
+
+    this.drawNewPiece = (player) => {
+        const random = Math.floor(Math.random() * 7)
+        player.piece = this.allPiece[random].shaped
+        player.pieceType = this.allPiece[random].type
+        player.color = this.allPiece[random].color
+        return this.drawPiece(player);
+    };
+
 
     this.drawField = field => {
         field.forEach((row, y) => {
@@ -151,8 +184,8 @@ function init() {
     this.collisionBottomHandle = (player, field) => {
         player.pos.y--;
         this.join(player, field);
-        player.pos.y = -1;
-        return this.drawPiece(player.piece, player.pos);
+        player.pos.y = 0;
+        return this.drawNewPiece(player);
     };
 
     this.rotateMatrix = (N, mat) => {
@@ -172,12 +205,18 @@ function init() {
     this.rotate = (player, field, activePiece) => {
         this.rotateMatrix(player.piece.length, player.piece);
         if (this.collision(player, field)) {
-            player.pos.x < 3 ? this.player.pos.x++ : this.player.pos.x--;
+            player.pieceType == 'I'
+                ? player.pos.x < 3
+                    ? (this.player.pos.x += 2)
+                    : (this.player.pos.x -= 2)
+                : player.pos.x < 3
+                ? (this.player.pos.x += 1)
+                : (this.player.pos.x -= 1);
         }
         activePiece.forEach(block => {
             block.destroy();
         });
-        return (activePiece = this.drawPiece(player.piece, player.pos));
+        return (activePiece = this.drawPiece(player));
     };
 
     this.initInput = () => {
@@ -211,7 +250,7 @@ function init() {
 function preload() {}
 
 function create() {
-    this.activePiece = this.drawPiece(this.player.piece, this.player.pos);
+    this.activePiece = this.drawPiece(this.player);
     this.drawField(this.field);
     this.initInput();
 }
