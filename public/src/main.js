@@ -21,15 +21,55 @@ const game = new Phaser.Game({
 function init() {
     this.dcount = 0;
 
-    this.pieceType = [
-        [0, 0, 0],
-        [0, 1, 1],
-        [1, 1, 0],
-    ];
+    // this.pieceType = [
+    //     [0, 0, 0],
+    //     [0, 1, 1],
+    //     [1, 1, 0],
+    // ];
+
+    this.pieceType = {
+        s_shaped: [
+            [0, 0, 0],
+            [0, 1, 1],
+            [1, 1, 0],
+        ],
+        z_shaped: [
+            [0, 0, 0],
+            [2, 2, 0],
+            [0, 2, 2],
+        ],
+        l_shaped: [
+            [0, 3, 0],
+            [0, 3, 0],
+            [0, 3, 3],
+        ],
+        j_shaped: [
+            [0, 4, 0],
+            [0, 4, 0],
+            [4, 4, 0],
+        ],
+        t_shaped: [
+            [0, 0, 0],
+            [0, 5, 0],
+            [5, 5, 5],
+        ], 
+        o_shaped: [
+            [6, 6],
+            [6, 6],
+        ],
+        i_shaped: [
+            [0, 0, 7, 0],
+            [0, 0, 7, 0],
+            [0, 0, 7, 0],
+            [0, 0, 7, 0],
+        ],
+    };
 
     this.player = {
         pos: { x: 0, y:0 },
-        piece: this.pieceType,
+        // piece: this.pieceType,
+        // piece: this.pieceType.i_shaped,
+        piece: JSON.parse(JSON.stringify(this.pieceType.i_shaped)),
     };
 
     this.field = (() => {
