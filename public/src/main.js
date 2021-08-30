@@ -128,13 +128,12 @@ function init() {
         }
     };
 
-    this.rotate = () => {
-        const piece = this.player.piece;
-        this.rotateMatrix(3, piece);
-        this.activePiece.forEach(block => {
+    this.rotate = (player, activePiece) => {
+        this.rotateMatrix(player.piece.length, player.piece);
+        activePiece.forEach(block => {
             block.destroy();
         });
-        this.activePiece = this.drawPiece(this.player.piece, this.player.pos);
+        return activePiece = this.drawPiece(player.piece, player.pos);
     };
 
     this.initInput = () => {
@@ -160,7 +159,7 @@ function init() {
         });
 
         this.input.keyboard.on('keydown-UP', event => {
-            this.rotate();
+            this.activePiece = this.rotate(this.player, this.activePiece);
         });
     };
 }
