@@ -5,17 +5,11 @@ const BLOCK_WIDTH = 25;
 const SCENE_HEIGHT = 500;
 const SCENE_WIDTH = 300;
 
-const game1 = new Phaser.Game({
+const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'tetris-player1',
     width: SCENE_WIDTH,
     height: SCENE_HEIGHT,
-    physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 200 },
-        },
-    },
     scene: {
         init: init,
         preload: preload,
@@ -27,15 +21,15 @@ const game1 = new Phaser.Game({
 function init() {
     this.dcount = 0;
 
-    this.pieceTpye = [
+    this.pieceType = [
         [0, 0, 0],
         [0, 1, 1],
         [1, 1, 0],
     ];
 
     this.player = {
-        pos: { x: 5, y: 10 },
-        piece: this.pieceTpye,
+        pos: { x: 0, y:0 },
+        piece: this.pieceType,
     };
 
     this.field = (() => {
@@ -52,6 +46,7 @@ function init() {
         const activePiece = [];
         piece.forEach((row, y) => {
             row.forEach((col, x) => {
+                console.log(col)
                 if (col !== 0) {
                     activePiece.push(
                         this.add.rectangle(
@@ -115,38 +110,31 @@ function init() {
     };
 
     this.collisionBottomHandle = (player, field) => {
-        player.pos.y--;
+        player.pos.y--
         this.join(player, field);
         player.pos.y = -1;
         return this.drawPiece(player.piece, player.pos);
     };
 
-    this.rotateMatrix = (N,mat) =>
-    {
-     
-        for (let x = 0; x < N / 2; x++)
-        {
-            for (let y = x; y < N - x - 1; y++)
-            {
+    this.rotateMatrix = (N, mat) => {
+        for (let x = 0; x < N / 2; x++) {
+            for (let y = x; y < N - x - 1; y++) {
                 let temp = mat[x][y];
                 mat[x][y] = mat[y][N - 1 - x];
-                mat[y][N - 1 - x]
-                    = mat[N - 1 - x][N - 1 - y];
+                mat[y][N - 1 - x] = mat[N - 1 - x][N - 1 - y];
                 mat[N - 1 - x][N - 1 - y] = mat[N - 1 - y][x];
                 mat[N - 1 - y][x] = temp;
             }
         }
-    }
-    
+    };
+
     this.rotate = () => {
-        const piece = this.player.piece
-        this.rotateMatrix(3, piece) 
-        console.log(piece)
+        const piece = this.player.piece;
+        this.rotateMatrix(3, piece);
         this.activePiece.forEach(block => {
             block.destroy();
-        })
-        this.activePiece = this.drawPiece(this.player.piece, this.player.pos)
-
+        });
+        this.activePiece = this.drawPiece(this.player.piece, this.player.pos);
     };
 
     this.initInput = () => {
@@ -172,12 +160,9 @@ function init() {
         });
 
         this.input.keyboard.on('keydown-UP', event => {
-            this.rotate()
-        })
-
-
+            this.rotate();
+        });
     };
-
 }
 
 function preload() {}
