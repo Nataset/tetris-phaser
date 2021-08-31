@@ -46,18 +46,18 @@ function init() {
 
 
             shaped: [
-                [0, 3, 0],
-                [0, 3, 0],
-                [0, 3, 3],
+                [3, 0, 0],
+                [3, 3, 3],
+                [0, 0, 0],
             ],
         },
         {
             type: 'J',
             color: 0x00FF00,
             shaped: [
-                [0, 4, 0],
-                [0, 4, 0],
-                [4, 4, 0],
+                [0, 0, 4],
+                [4, 4, 4],
+                [0, 0, 0],
             ],
         },
         {
@@ -81,10 +81,10 @@ function init() {
             type: 'I',
             color: 0xFFFFFF,
             shaped: [
-                [0, 0, 7, 0],
-                [0, 0, 7, 0],
-                [0, 0, 7, 0],
-                [0, 0, 7, 0],
+                [0, 0, 0, 0],
+                [7, 7, 7, 7],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
             ],
         },
     ];
@@ -118,7 +118,7 @@ function init() {
                             BLOCK_WIDTH,
                             BLOCK_HEIGHT,
                             player.color,
-                        ),
+                        ).setStrokeStyle(3, 0x808080),
                     );
                 }
             });
@@ -185,6 +185,7 @@ function init() {
         player.pos.y--;
         this.join(player, field);
         player.pos.y = 0;
+        player.pos.x = 5;
         return this.drawNewPiece(player);
     };
 
@@ -199,8 +200,6 @@ function init() {
             }
         }
     };
-
-    this.rotateCollision = (player, field) => {};
 
     this.rotate = (player, field, activePiece) => {
         this.rotateMatrix(player.piece.length, player.piece);
@@ -250,7 +249,7 @@ function init() {
 function preload() {}
 
 function create() {
-    this.activePiece = this.drawPiece(this.player);
+    this.activePiece = this.drawNewPiece(this.player);
     this.drawField(this.field);
     this.initInput();
 }
