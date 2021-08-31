@@ -8,6 +8,7 @@ const SCENE_WIDTH = 360;
 const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'tetris-player1',
+    backgroundColor: 0x000000,
     width: SCENE_WIDTH,
     height: SCENE_HEIGHT,
     scene: {
@@ -79,7 +80,7 @@ function init() {
         },
         {
             type: 'I',
-            color: 0xFFFFFF,
+            color: 0xCACACA,
             shaped: [
                 [0, 0, 0, 0],
                 [7, 7, 7, 7],
@@ -118,7 +119,7 @@ function init() {
                             BLOCK_WIDTH,
                             BLOCK_HEIGHT,
                             player.color,
-                        ).setStrokeStyle(3, 0x808080),
+                        ).setStrokeStyle(3, 0xFFFFFF),
                     );
                 }
             });
