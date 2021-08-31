@@ -92,7 +92,7 @@ function init() {
     ];
 
     this.player = {
-        pos: { x: 5, y: -1 },
+        pos: { x: 5, y: 0 },
         piece: this.allPiece[6].shaped,
         pieceType: this.allPiece[6].type,
         color: this.allPiece[6].color,
@@ -100,7 +100,6 @@ function init() {
 
     this.field = (() => {
         let w = parseInt(SCENE_WIDTH / BLOCK_WIDTH);
-        console.log(w);
         let h = parseInt(SCENE_HEIGHT / BLOCK_HEIGHT);
         const matrix = [];
         while (h--) {
@@ -108,6 +107,9 @@ function init() {
         }
         return matrix;
     })();
+
+    window.FIELD_PIECE = this.fieldPiece;
+    window.FIELD = this.field;
 
     this.drawPiece = player => {
         const activePiece = [];
@@ -123,7 +125,7 @@ function init() {
                                 BLOCK_HEIGHT,
                                 player.color,
                             )
-                            .setStrokeStyle(3, 0xffffff),
+                            .setStrokeStyle(3, player.color ? 0xffffff: 0x808080),
                     );
                 }
             });
@@ -131,11 +133,22 @@ function init() {
         return activePiece;
     };
 
+    this.drawGuidePiece = (player, field) => {
+        
+        let pos = {...player.pos};
+        while(!this.collision({pos: pos, piece: player.piece}, field)) {
+            pos.y++
+        }
+        pos.y--
+        return this.drawPiece({pos: pos, piece: this.player.piece}) 
+    }
+
     this.drawNewPiece = player => {
         const random = Math.floor(Math.random() * 7);
         player.piece = this.allPiece[random].shaped;
         player.pieceType = this.allPiece[random].type;
         player.color = this.allPiece[random].color;
+        this.guidePiece = this.drawGuidePiece(this.player, this.field)
         return this.drawPiece(player);
     };
 
@@ -169,9 +182,11 @@ function init() {
     };
 
     this.join = (player, field) => {
+        console.log(player)
         player.piece.forEach((row, y) => {
             row.forEach((value, x) => {
                 if (value !== 0) {
+                    console.log(value)
                     field[y + player.pos.y][x + player.pos.x] = value;
                 }
             });
@@ -186,18 +201,29 @@ function init() {
         piece.forEach(block => {
             this.moveBlock(block, offset);
         });
+        this.guidePiece.forEach(block => {
+            block.destroy();
+        })
+        this.guidePiece=this.drawGuidePiece(this.player, this.field);
     };
 
     this.collisionBottomHandle = (player, field, activePiece) => {
         player.pos.y--;
+        // console.log("before");
+        // console.table(FIELD)
         this.join(player, field);
+        // console.log("after")
+        // console.table(FIELD)
         player.pos.y = 0;
         player.pos.x = 5;
         activePiece.forEach(block => {
             block.field_y = (block.y - BLOCK_HEIGHT / 2) / BLOCK_HEIGHT;
             this.fieldPiece.push(block);
         });
-        this.checkClearLine();
+        this.guidePiece.forEach(block => {
+            block.destroy();
+        })
+        this.checkClearLine(field, this.fieldPiece);
         return this.drawNewPiece(player);
     };
 
@@ -227,7 +253,49 @@ function init() {
         activePiece.forEach(block => {
             block.destroy();
         });
+        this.guidePiece.forEach(block => {
+            block.destroy();
+        })
+        this.guidePiece = this.drawGuidePiece(player, field)
         return (activePiece = this.drawPiece(player));
+    };
+
+    
+    this.clearFieldLine = (clear_y, field) => {
+        for (let i = clear_y; i >= 0; i--) {
+            if (i == 0) {
+                field[0].map(value => 0);
+            } else {
+                field[i] = field[i - 1];
+            }
+        }
+    };
+
+    this.clearPieceLine = (clear_y, fieldPiece) => {
+        fieldPiece.forEach(block => {
+            if (block.field_y == clear_y) {
+                block.field_y = -1;
+                block.destroy();
+            } 
+            if (block.field_y < clear_y) {
+                block.field_y++;
+                this.moveBlock(block, { x: 0, y: 1 });
+            }
+        });
+    };
+
+    this.checkClearLine = (field, fieldPiece) => {
+        let clearFlag = true;
+        field.forEach((row, clear_y) => {
+            clearFlag = true;
+            row.forEach(value => {
+                if (value == 0) clearFlag = false;
+            });
+            if (clearFlag) {
+                this.clearFieldLine(clear_y, field);
+                this.clearPieceLine(clear_y, fieldPiece);
+            }
+        });
     };
 
     this.initInput = () => {
@@ -259,33 +327,17 @@ function init() {
         this.input.keyboard.on('keydown-UP', event => {
             this.activePiece = this.rotate(this.player, this.field, this.activePiece);
         });
-    };
 
-    this.clearFieldLine = (clear_y, field) => {
-        for (let i = clear_y; i >= 0; i--)
-            i == 0 ? field[0].map(value => 0) : (field[i] = field[i - 1]);
-    };
-
-    this.clearPiece;
-
-    this.checkClearLine = () => {
-        this.field.forEach((row, clear_y) => {
-            let clearFlag = true;
-            row.forEach(value => {
-                if (value == 0) clearFlag = false;
-            });
-            if (clearFlag) {
-                this.clearFieldLine(clear_y, this.field);
-                this.fieldPiece.forEach(block => {
-                    if (block.field_y < clear_y) {
-                        block.field_y++;
-                        this.moveBlock(block, { x: 0, y: 1 });
-                    } else if (block.field_y == clear_y) {
-                        block.destroy();
-                    }
-                });
-                clearFlag = false;
+        this.input.keyboard.on('keydown-SPACE', event => {
+            let deltaY = this.player.pos.y;
+            let endY = 0;
+            while (!this.collision(this.player, this.field)) {
+                endY = this.player.pos.y;
+                this.player.pos.y++;
             }
+            deltaY = endY - deltaY;
+            this.movePiece(this.activePiece, { x: 0, y: deltaY });
+            this.activePiece = this.collisionBottomHandle(this.player, this.field, this.activePiece);
         });
     };
 }
@@ -299,9 +351,9 @@ function create() {
 }
 
 function update(time, deltaTime) {
+
     if (this.dcount > 500) {
-        window.FIELD_PIECE = this.fieldPiece;
-        window.FIELD = this.field;
+        
         this.player.pos.y++;
         this.collision(this.player, this.field)
             ? (this.activePiece = this.collisionBottomHandle(
