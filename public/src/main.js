@@ -22,10 +22,12 @@ const game = new Phaser.Game({
 function init() {
     this.dcount = 0;
 
+    this.fieldPiece = [];
+
     this.allPiece = [
         {
             type: 'S',
-            color: 0xFF0000,
+            color: 0xff0000,
             shaped: [
                 [0, 0, 0],
                 [0, 1, 1],
@@ -34,7 +36,7 @@ function init() {
         },
         {
             type: 'Z',
-            color: 0xFFFF00,
+            color: 0xffff00,
             shaped: [
                 [0, 0, 0],
                 [2, 2, 0],
@@ -43,8 +45,7 @@ function init() {
         },
         {
             type: 'L',
-            color: 0xFF00FF,
-
+            color: 0xff00ff,
 
             shaped: [
                 [3, 0, 0],
@@ -54,7 +55,7 @@ function init() {
         },
         {
             type: 'J',
-            color: 0x00FF00,
+            color: 0x00ff00,
             shaped: [
                 [0, 0, 4],
                 [4, 4, 4],
@@ -63,7 +64,7 @@ function init() {
         },
         {
             type: 'T',
-            color: 0x0000FF,
+            color: 0x0000ff,
             shaped: [
                 [0, 0, 0],
                 [0, 5, 0],
@@ -72,7 +73,7 @@ function init() {
         },
         {
             type: 'O',
-            color: 0x00FFFF,
+            color: 0x00ffff,
             shaped: [
                 [6, 6],
                 [6, 6],
@@ -80,7 +81,7 @@ function init() {
         },
         {
             type: 'I',
-            color: 0xCACACA,
+            color: 0xcacaca,
             shaped: [
                 [0, 0, 0, 0],
                 [7, 7, 7, 7],
@@ -94,11 +95,12 @@ function init() {
         pos: { x: 5, y: -1 },
         piece: this.allPiece[6].shaped,
         pieceType: this.allPiece[6].type,
-        color: this.allPiece[6].color
+        color: this.allPiece[6].color,
     };
 
     this.field = (() => {
         let w = parseInt(SCENE_WIDTH / BLOCK_WIDTH);
+        console.log(w)
         let h = parseInt(SCENE_HEIGHT / BLOCK_HEIGHT);
         const matrix = [];
         while (h--) {
@@ -107,19 +109,21 @@ function init() {
         return matrix;
     })();
 
-    this.drawPiece = (player) => {
+    this.drawPiece = player => {
         const activePiece = [];
         player.piece.forEach((row, y) => {
             row.forEach((col, x) => {
                 if (col !== 0) {
                     activePiece.push(
-                        this.add.rectangle(
-                            (x + player.pos.x) * BLOCK_WIDTH + BLOCK_WIDTH / 2,
-                            (y + player.pos.y) * BLOCK_HEIGHT + BLOCK_HEIGHT / 2,
-                            BLOCK_WIDTH,
-                            BLOCK_HEIGHT,
-                            player.color,
-                        ).setStrokeStyle(3, 0xFFFFFF),
+                        this.add
+                            .rectangle(
+                                (x + player.pos.x) * BLOCK_WIDTH + BLOCK_WIDTH / 2,
+                                (y + player.pos.y) * BLOCK_HEIGHT + BLOCK_HEIGHT / 2,
+                                BLOCK_WIDTH,
+                                BLOCK_HEIGHT,
+                                player.color,
+                            )
+                            .setStrokeStyle(3, 0xffffff),
                     );
                 }
             });
@@ -127,14 +131,13 @@ function init() {
         return activePiece;
     };
 
-    this.drawNewPiece = (player) => {
-        const random = Math.floor(Math.random() * 7)
-        player.piece = this.allPiece[random].shaped
-        player.pieceType = this.allPiece[random].type
-        player.color = this.allPiece[random].color
+    this.drawNewPiece = player => {
+        const random = Math.floor(Math.random() * 7);
+        player.piece = this.allPiece[random].shaped;
+        player.pieceType = this.allPiece[random].type;
+        player.color = this.allPiece[random].color;
         return this.drawPiece(player);
     };
-
 
     this.drawField = field => {
         field.forEach((row, y) => {
@@ -175,18 +178,26 @@ function init() {
         });
     };
 
-    this.move = (Piece, { x, y }) => {
-        Piece.forEach(block => {
-            block.x += BLOCK_WIDTH * x;
-            block.y += BLOCK_HEIGHT * y;
+    this.moveBlock = (block, { x, y }) => {
+        block.x += BLOCK_WIDTH * x;
+        block.y += BLOCK_HEIGHT * y;
+    };
+    this.movePiece = (piece, offset) => {
+        piece.forEach(block => {
+            this.moveBlock(block, offset);
         });
     };
 
-    this.collisionBottomHandle = (player, field) => {
+    this.collisionBottomHandle = (player, field, activePiece) => {
         player.pos.y--;
         this.join(player, field);
         player.pos.y = 0;
         player.pos.x = 5;
+        activePiece.forEach(block => {
+            block.field_y = (block.y - BLOCK_HEIGHT / 2) / BLOCK_HEIGHT;
+            this.fieldPiece.push(block);
+        });
+        this.checkClearLine();
         return this.drawNewPiece(player);
     };
 
@@ -224,25 +235,63 @@ function init() {
             this.player.pos.x += -1;
             this.collision(this.player, this.field)
                 ? (this.player.pos.x += 1)
-                : this.move(this.activePiece, { x: -1, y: 0 });
+                : this.movePiece(this.activePiece, { x: -1, y: 0 });
         });
 
         this.input.keyboard.on('keydown-RIGHT', event => {
             this.player.pos.x += 1;
             this.collision(this.player, this.field)
                 ? (this.player.pos.x += -1)
-                : this.move(this.activePiece, { x: 1, y: 0 });
+                : this.movePiece(this.activePiece, { x: 1, y: 0 });
         });
 
         this.input.keyboard.on('keydown-DOWN', event => {
             this.player.pos.y++;
             this.collision(this.player, this.field)
-                ? (this.activePiece = this.collisionBottomHandle(this.player, this.field))
-                : this.move(this.activePiece, { x: 0, y: 1 });
+                ? (this.activePiece = this.collisionBottomHandle(
+                      this.player,
+                      this.field,
+                      this.activePiece,
+                  ))
+                : this.movePiece(this.activePiece, { x: 0, y: 1 });
         });
 
         this.input.keyboard.on('keydown-UP', event => {
             this.activePiece = this.rotate(this.player, this.field, this.activePiece);
+        });
+    };
+
+    this.clearFieldLine = (clear_y, field) => {
+        for(let i = clear_y; i >= 0; i--)
+            if (i == 0) {
+                let arr = []
+                arr.push(new Array(12).fill(0));
+                console.log(arr)
+                field[i] = arr[0];
+            } else {
+                field[i] = field[i-1] 
+            }
+    }
+
+    this.checkClearLine = () => {
+        this.field.forEach((row, clear_y) => {
+            let clearFlag = true;
+            row.forEach((value) => {
+                if (value == 0) clearFlag = false;
+            });
+            if (clearFlag) {
+                this.clearFieldLine(clear_y, this.field);
+                this.fieldPiece.forEach(block => {
+                    if (block.field_y < clear_y) {
+                        block.field_y++;
+                        this.moveBlock(block, { x: 0, y: 1 });
+                    } else if (block.field_y == clear_y) {
+                        block.destroy();
+                    } else if (block.field_y > clear_y) {
+                        this.moveBlock(block, { x: 0, y: -1 });
+                    }
+                });
+            }
         });
     };
 }
@@ -257,11 +306,19 @@ function create() {
 
 function update(time, deltaTime) {
     if (this.dcount > 500) {
+        // this.activePiece.forEach(block => {
+        //     console.log((block.y - BLOCK_WIDTH/2) / BLOCK_WIDTH)
+        // })
+        window.FIELD_PIECE = this.fieldPiece;
         window.FIELD = this.field;
         this.player.pos.y++;
         this.collision(this.player, this.field)
-            ? (this.activePiece = this.collisionBottomHandle(this.player, this.field))
-            : this.move(this.activePiece, { x: 0, y: 1 });
+            ? (this.activePiece = this.collisionBottomHandle(
+                  this.player,
+                  this.field,
+                  this.activePiece,
+              ))
+            : this.movePiece(this.activePiece, { x: 0, y: 1 });
         this.dcount = 0;
     }
     this.dcount += deltaTime;
