@@ -36,7 +36,7 @@ function init() {
         },
         {
             type: 'Z',
-            color: 0xffff00,
+            color: 0xf7f700,
             shaped: [
                 [0, 0, 0],
                 [2, 2, 0],
@@ -100,7 +100,7 @@ function init() {
 
     this.field = (() => {
         let w = parseInt(SCENE_WIDTH / BLOCK_WIDTH);
-        console.log(w)
+        console.log(w);
         let h = parseInt(SCENE_HEIGHT / BLOCK_HEIGHT);
         const matrix = [];
         while (h--) {
@@ -262,21 +262,16 @@ function init() {
     };
 
     this.clearFieldLine = (clear_y, field) => {
-        for(let i = clear_y; i >= 0; i--)
-            if (i == 0) {
-                let arr = []
-                arr.push(new Array(12).fill(0));
-                console.log(arr)
-                field[i] = arr[0];
-            } else {
-                field[i] = field[i-1] 
-            }
-    }
+        for (let i = clear_y; i >= 0; i--)
+            i == 0 ? field[0].map(value => 0) : (field[i] = field[i - 1]);
+    };
+
+    this.clearPiece;
 
     this.checkClearLine = () => {
         this.field.forEach((row, clear_y) => {
             let clearFlag = true;
-            row.forEach((value) => {
+            row.forEach(value => {
                 if (value == 0) clearFlag = false;
             });
             if (clearFlag) {
@@ -287,10 +282,9 @@ function init() {
                         this.moveBlock(block, { x: 0, y: 1 });
                     } else if (block.field_y == clear_y) {
                         block.destroy();
-                    } else if (block.field_y > clear_y) {
-                        this.moveBlock(block, { x: 0, y: -1 });
                     }
                 });
+                clearFlag = false;
             }
         });
     };
@@ -306,9 +300,6 @@ function create() {
 
 function update(time, deltaTime) {
     if (this.dcount > 500) {
-        // this.activePiece.forEach(block => {
-        //     console.log((block.y - BLOCK_WIDTH/2) / BLOCK_WIDTH)
-        // })
         window.FIELD_PIECE = this.fieldPiece;
         window.FIELD = this.field;
         this.player.pos.y++;
