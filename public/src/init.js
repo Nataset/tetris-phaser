@@ -1,0 +1,5 @@
+const BLOCK_HEIGHT = 30;
+const BLOCK_WIDTH = 30;
+const SCENE_HEIGHT = 600;
+const SCENE_WIDTH = 360;
+const ABOVE_GAP = 2;
