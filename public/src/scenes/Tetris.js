@@ -74,8 +74,8 @@ export default class Tetris extends Phaser.Scene {
                 color: 0xcacaca,
                 shaped: [
                     [0, 0, 0, 0],
-                    [7, 7, 7, 7],
                     [0, 0, 0, 0],
+                    [7, 7, 7, 7],
                     [0, 0, 0, 0],
                 ],
             },
@@ -83,9 +83,9 @@ export default class Tetris extends Phaser.Scene {
 
         this.player = {
             pos: { x: 5, y: 0 },
-            piece: this.allPiece[6].shaped,
-            pieceType: this.allPiece[6].type,
-            color: this.allPiece[6].color,
+            piece: 0,
+            pieceType: 0,
+            color: 0,
         };
 
         this.field = (() => {
@@ -102,7 +102,7 @@ export default class Tetris extends Phaser.Scene {
         window.FIELD = this.field;
 
         this.nextPieceInit = () => {
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 3; i++) {
                 let random = Math.floor(Math.random() * 7);
                 this.nextPiece.push({...this.allPiece[random]});
             }
@@ -115,7 +115,32 @@ export default class Tetris extends Phaser.Scene {
                 tmpPlayer.piece = piece.shaped;
                 tmpPlayer.pieceType = piece.type;
                 tmpPlayer.color = piece.color;
-                tmpPlayer.pos = { x: GAME_SCENE_WIDTH + 20, y: 250 + 100 * n };
+                // tmpPlayer.piece = this.allPiece[1].shaped;
+                // tmpPlayer.pieceType = this.allPiece[1].type;
+                // tmpPlayer.color = this.allPiece[1].color;
+                switch(tmpPlayer.pieceType){
+                    case 'S':
+                    tmpPlayer.pos = { x: GAME_SCENE_WIDTH + 25, y: 300 + 100 * n  - 30};
+                    break;
+                    case 'Z':
+                    tmpPlayer.pos = { x: GAME_SCENE_WIDTH + 25, y: 300 + 100 * n - 30};
+                    break;
+                    case 'L':
+                    tmpPlayer.pos = { x: GAME_SCENE_WIDTH + 25, y: 300 + 100 * n };
+                    break;
+                    case 'J':
+                    tmpPlayer.pos = { x: GAME_SCENE_WIDTH + 25, y: 300 + 100 * n};
+                    break;
+                    case 'T':
+                    tmpPlayer.pos = { x: GAME_SCENE_WIDTH + 25, y: 300 + 100 * n - 30};
+                    break;
+                    case 'O':
+                    tmpPlayer.pos = { x: GAME_SCENE_WIDTH + 40, y: 300 + 100 * n };
+                    break;
+                    case 'I':
+                    tmpPlayer.pos = { x: GAME_SCENE_WIDTH + 20, y: 250 + 100 * n};
+                    break;
+                }
                 this.drawedNextPiece.push(this.drawHUDPiece(tmpPlayer))
             });
         };
@@ -185,7 +210,7 @@ export default class Tetris extends Phaser.Scene {
 
         this.drawNewPiece = player => {
             const random = Math.floor(Math.random() * 7);
-            const newPiece = {...this.nextPiece.shift()};
+            const newPiece = JSON.parse(JSON.stringify(this.nextPiece.shift()));
             player.piece = newPiece.shaped;
             player.pieceType = newPiece.type;
             player.color = newPiece.color;
@@ -426,7 +451,6 @@ export default class Tetris extends Phaser.Scene {
     }
 
     create() {
-        window.test = this.allPiece
         this.nextPieceInit();
         this.activePiece = this.drawNewPiece(this.player);
         this.drawField(this.field);
