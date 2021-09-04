@@ -1,11 +1,5 @@
 import Phaser from '../lib/phaser.js';
 
-const BLOCK_HEIGHT = 30;
-const BLOCK_WIDTH = 30;
-const SCENE_HEIGHT = 600;
-const SCENE_WIDTH = 360;
-const ABOVE_GAP = 2;
-
 export default class Tetris extends Phaser.Scene {
     constructor() {
         super('tetris');
@@ -15,6 +9,10 @@ export default class Tetris extends Phaser.Scene {
         this.dcount = 0;
 
         this.fieldPiece = [];
+
+        this.nextPiece = [];
+
+        this.drawedNextPiece = [];
 
         this.allPiece = [
             {
@@ -56,7 +54,7 @@ export default class Tetris extends Phaser.Scene {
             },
             {
                 type: 'T',
-                color: 0x0000ff,
+                color: 0x292cff,
                 shaped: [
                     [0, 0, 0],
                     [0, 5, 0],
@@ -91,8 +89,8 @@ export default class Tetris extends Phaser.Scene {
         };
 
         this.field = (() => {
-            let w = parseInt(SCENE_WIDTH / BLOCK_WIDTH);
-            let h = parseInt(SCENE_HEIGHT / BLOCK_HEIGHT) + ABOVE_GAP;
+            let w = parseInt(GAME_SCENE_WIDTH / BLOCK_WIDTH);
+            let h = parseInt(GAME_SCENE_HEIGHT / BLOCK_HEIGHT) + ABOVE_GAP;
             const matrix = [];
             while (h--) {
                 matrix.push(new Array(w).fill(0));
@@ -102,6 +100,25 @@ export default class Tetris extends Phaser.Scene {
 
         window.FIELD_PIECE = this.fieldPiece;
         window.FIELD = this.field;
+
+        this.nextPieceInit = () => {
+            for (let i = 0; i < 4; i++) {
+                let random = Math.floor(Math.random() * 7);
+                this.nextPiece.push({...this.allPiece[random]});
+            }
+        };
+
+        this.drawNextPiece = nextPiece => {
+            nextPiece.forEach((piece, n) => {
+                
+                const tmpPlayer = {};
+                tmpPlayer.piece = piece.shaped;
+                tmpPlayer.pieceType = piece.type;
+                tmpPlayer.color = piece.color;
+                tmpPlayer.pos = { x: GAME_SCENE_WIDTH + 20, y: 250 + 100 * n };
+                this.drawedNextPiece.push(this.drawHUDPiece(tmpPlayer))
+            });
+        };
 
         this.drawPiece = player => {
             const activePiece = [];
@@ -117,7 +134,35 @@ export default class Tetris extends Phaser.Scene {
                                     BLOCK_HEIGHT,
                                     player.color,
                                 )
-                                .setStrokeStyle(3, player.color ? 0xffffff : 0x808080),
+                                .setStrokeStyle(
+                                    3,
+                                    player.colorBorder ? player.colorBorder : 0xffffff,
+                                ),
+                        );
+                    }
+                });
+            });
+            return activePiece;
+        };
+
+        this.drawHUDPiece = player => {
+            const activePiece = [];
+            player.piece.forEach((row, y) => {
+                row.forEach((col, x) => {
+                    if (col !== 0) {
+                        activePiece.push(
+                            this.add
+                                .rectangle(
+                                    x * BLOCK_WIDTH + BLOCK_WIDTH / 2 + player.pos.x,
+                                    y * BLOCK_HEIGHT + BLOCK_HEIGHT / 2 + player.pos.y,
+                                    BLOCK_WIDTH,
+                                    BLOCK_HEIGHT,
+                                    player.color,
+                                )
+                                .setStrokeStyle(
+                                    3,
+                                    player.colorBorder ? player.colorBorder : 0xffffff,
+                                ),
                         );
                     }
                 });
@@ -131,15 +176,27 @@ export default class Tetris extends Phaser.Scene {
                 pos.y++;
             }
             pos.y--;
-            return this.drawPiece({ pos: pos, piece: this.player.piece });
+            return this.drawPiece({
+                pos: pos,
+                piece: this.player.piece,
+                colorBorder: this.player.color,
+            });
         };
 
         this.drawNewPiece = player => {
             const random = Math.floor(Math.random() * 7);
-            player.piece = this.allPiece[random].shaped;
-            player.pieceType = this.allPiece[random].type;
-            player.color = this.allPiece[random].color;
-            this.guidePiece = this.drawGuidePiece(this.player, this.field);
+            const newPiece = {...this.nextPiece.shift()};
+            player.piece = newPiece.shaped;
+            player.pieceType = newPiece.type;
+            player.color = newPiece.color;
+            this.nextPiece.push(this.allPiece[random]);
+            this.drawedNextPiece.forEach(piece => {
+                piece.forEach(block => {
+                    block.destroy();
+                }) 
+             })
+            this.drawNextPiece(this.nextPiece);
+            this.guidePiece = this.drawGuidePiece(player, this.field);
             return this.drawPiece(player);
         };
 
@@ -205,7 +262,7 @@ export default class Tetris extends Phaser.Scene {
             this.join(player, field);
             // console.log('after');
             // console.table(field);
-            player.pos.y = 0;
+            player.pos.y = -0;
             player.pos.x = 5;
             activePiece.forEach(block => {
                 block.field_y = (block.y - BLOCK_HEIGHT / 2) / BLOCK_HEIGHT + ABOVE_GAP;
@@ -291,7 +348,7 @@ export default class Tetris extends Phaser.Scene {
 
         this.checkGameOver = field => {
             let checkFlag = false;
-            for (let i = 0; i < ABOVE_GAP; i++) {
+            for (let i = 0; i < ABOVE_GAP + 1; i++) {
                 field[i].forEach(value => {
                     if (value != 0) {
                         checkFlag = true;
@@ -349,19 +406,37 @@ export default class Tetris extends Phaser.Scene {
         };
     }
 
-    preload() {}
+    preload() {
+        let graphics = this.add.graphics();
+        let line = new Phaser.Geom.Line(GAME_SCENE_WIDTH, 0, GAME_SCENE_WIDTH, GAME_SCENE_HEIGHT);
+        graphics.lineStyle(5, 0xffffff);
+        graphics.strokeLineShape(line);
+        this.scoreText = this.add
+            .text(GAME_SCENE_WIDTH + HUD_WIDTH / 2, 10, 'Score', { color: '#ffffff', fontSize: 22 })
+            .setOrigin(0.5, 0);
+        this.scoreNumberText = this.add
+            .text(GAME_SCENE_WIDTH + HUD_WIDTH / 2, 35, 0, { color: '#ffffff', fontSize: 20 })
+            .setOrigin(0.5, 0);
+        this.keepText = this.add
+            .text(GAME_SCENE_WIDTH + HUD_WIDTH / 2, 90, 'HOLD', { color: '#ffffff', fontSize: 24 })
+            .setOrigin(0.5, 0);
+        this.nextText = this.add
+            .text(GAME_SCENE_WIDTH + HUD_WIDTH / 2, 240, 'NEXT', { color: '#ffffff', fontSize: 24 })
+            .setOrigin(0.5, 0);
+    }
 
     create() {
+        window.test = this.allPiece
+        this.nextPieceInit();
         this.activePiece = this.drawNewPiece(this.player);
         this.drawField(this.field);
         this.initInput();
     }
 
     update(time, deltaTime) {
-        if (this.dcount > 500) {
-            if (this.checkGameOver(this.field)) {
-                this.scene.start('game-over');
-            }
+        if (this.checkGameOver(this.field)) {
+            this.scene.start('game-over');
+        } else if (this.dcount > 500) {
             this.player.pos.y++;
             this.collision(this.player, this.field)
                 ? (this.activePiece = this.collisionBottomHandle(
